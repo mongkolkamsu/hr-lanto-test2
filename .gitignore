@@ -1,0 +1,73 @@
+# HR Lanto - Git Ignore
+
+# Uploaded files
+uploads/
+!uploads/.gitkeep
+
+# Configuration (if using environment variables)
+.env
+config.local.php
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+error_log
+debug.log
+
+# PHP
+vendor/
+composer.lock
+config.php
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.md
+
+# Temporary files
+tmp/
+temp/
+cache/
+Check_File/
+MD/
+Database/
+
+# Database dumps (except initial schema)
+*.sql
+!database.sql
+
+# Test files (except the one we want to keep)
+test_*.php
+
+#text files
+*.txt
+
+#batch files
+*.bat
+
+#sh file
+*.sh
+
+# Database dump and migration files (security risk)
+dump_shifts.php
+dump_timelogs.php
+migrate_db.php
+migration_add_flexible.php
+
+# Generated dump files
+shifts_dump.json
+timelogs_schema.txt
+
+

@@ -1,0 +1,28 @@
+{
+  "weightsManifest": [
+    {
+      "paths": [
+        "tiny_face_detector_model-shard1"
+      ],
+      "weights": [
+        {
+          "name": "conv0/filters",
+          "shape": [
+            3,
+            3,
+            3,
+            16
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "conv0/bias",
+          "shape": [
+            16
+          ],
+          "dtype": "float32"
+        }
+      ]
+    }
+  ]
+}

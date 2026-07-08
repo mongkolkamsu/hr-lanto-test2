@@ -1,0 +1,23 @@
+{
+  "name": "HR Lanto - ระบบเช็คเข้าออกงาน",
+  "short_name": "HR Lanto",
+  "description": "ระบบเช็คเข้าออกงานและแจ้งลาสำหรับพนักงาน",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FF6B35",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}
+
