@@ -76,6 +76,9 @@ switch ($action) {
     case 'branches':
         getBranches();
         break;
+    case 'update_log':
+        handleUpdateLog();
+        break;    
     default:
         jsonResponse(false, 'Invalid action');
 }
@@ -601,3 +604,62 @@ function jsonResponse($success, $message, $data = null, $extra = []) {
     exit;
 }
 
+function handleUpdateLog() {
+    global $pdo;
+    
+    // 🔒 ระบบความปลอดภัย: ล็อกให้เฉพาะแอดมินเท่านั้นที่มีสิทธิ์แก้ประวัติเวลา
+    requireRole(['admin']); 
+    
+    $rawInput = file_get_contents('php://input');
+    $data = json_decode($rawInput, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        jsonResponse(false, 'ข้อมูล JSON ไม่ถูกต้อง');
+    }
+    
+    // รับค่าที่ส่งมาจากหน้าบ้าน
+    $log_id = $data['log_id'] ?? null;
+    $work_date = $data['work_date'] ?? null;
+    $check_in_time = $data['check_in_time'] ?? null;
+    $check_out_time = $data['check_out_time'] ?? null;
+    $status = $data['status'] ?? 'on_time'; // on_time, late, early
+    
+    // ตรวจสอบข้อมูลเบื้องต้น
+    if (!$log_id) {
+        jsonResponse(false, 'ไม่พบรหัสรายการ (Log ID) ที่ต้องการแก้ไข');
+    }
+    if (!$work_date || !$check_in_time) {
+        jsonResponse(false, 'กรุณาระบุวันที่และเวลาเข้างานให้ครบถ้วน');
+    }
+    
+    // 💡 เทคนิคสำคัญ: ถ้าไม่ได้กรอกเวลาออกงาน ให้เซ็ตเป็น NULL ในฐานข้อมูลเพื่อไม่ให้โค้ดเอเรอร์
+    if (empty($check_out_time)) {
+        $check_out_time = null;
+    }
+    
+    try {
+        // สั่งอัปเดตข้อมูลลงฐานข้อมูลแยกตาม ID ของแถวนั้นๆ
+        $stmt = $pdo->prepare("
+            UPDATE time_logs 
+            SET work_date = ?, 
+                check_in_time = ?, 
+                check_out_time = ?, 
+                status = ? 
+            WHERE id = ?
+        ");
+        
+        $stmt->execute([
+            $work_date,
+            $check_in_time,
+            $check_out_time,
+            $status,
+            $log_id
+        ]);
+        
+        jsonResponse(true, 'แก้ไขประวัติเวลาเข้าออกงานสำเร็จเรียบร้อยแล้ว');
+        
+    } catch (PDOException $e) {
+        error_log('Update time log error: ' . $e->getMessage());
+        jsonResponse(false, 'เกิดข้อผิดพลาดของฐานข้อมูล: ' . $e->getMessage());
+    }
+}
