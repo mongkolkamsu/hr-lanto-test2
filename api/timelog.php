@@ -608,7 +608,7 @@ function handleUpdateLog() {
     global $pdo;
     
     // 🔒 ระบบความปลอดภัย: ล็อกให้เฉพาะแอดมินเท่านั้นที่มีสิทธิ์แก้ประวัติเวลา
-    requireRole(['admin']); 
+    requireRole(['ผู้ดูแลระบบ', 'HR']);
     
     $rawInput = file_get_contents('php://input');
     $data = json_decode($rawInput, true);
