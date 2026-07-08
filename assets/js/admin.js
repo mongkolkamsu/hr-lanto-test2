@@ -911,6 +911,7 @@ function renderTimeLogsTable(logs, startDate = '', endDate = '', departmentId = 
                             <th>เข้างาน</th>
                             <th>ออกงาน</th>
                             <th>สถานะ</th>
+                            <th>จัดการ</th>
                         </tr>
                     </thead>
                     <tbody id="timelogs-table-body">
@@ -1051,6 +1052,12 @@ function renderTimeLogsTableHTML(logs) {
                                 <span class="badge ${log.status}">
                                     ${getStatusText(log.status)}
                                 </span>
+                            </td>
+                            <td>
+                                <button class="btn-sm btn-edit" style="background: #f16e00; color: white; cursor: pointer;" 
+                                        onclick="window.openEditTimeLogModal(${log.id}, '${log.work_date}', '${log.check_in_time || ''}', '${log.check_out_time || ''}', '${log.status}', '${log.first_name} ${log.last_name}')">
+                                    ✏️ แก้ไข
+                                </button>
                             </td>
                         </tr>
                     `;
@@ -4752,4 +4759,77 @@ function exportLeavesToCSV() {
 
 // Make loadAdminSection globally accessible for hash navigation
 window.loadAdminSection = loadAdminSection;
-
+// ➕ วางท่อนนี้ไว้บรรทัดล่างสุดของไฟล์ admin.js
+window.openEditTimeLogModal = function(id, workDate, checkIn, checkOut, status, empName) {
+    const overlay = document.createElement('div');
+    overlay.id = 'edit-timelog-popup-overlay';
+    overlay.style = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000; font-family: sans-serif;';
+    
+    overlay.innerHTML = `
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #333; margin-bottom: 15px; border-bottom: 2px solid #f16e00; padding-bottom: 8px;">✏️ แก้ไขประวัติเวลา [${empName}]</h3>
+            <form id="popup-edit-timelog-form">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 5px;">วันที่ทำงาน (work_date)</label>
+                    <input type="date" id="p-work-date" class="form-control" value="${workDate}" required style="width: 100%; box-sizing: border-box; height: 40px; padding: 5px 10px;">
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 5px;">เวลาเข้างาน (check_in_time)</label>
+                    <input type="text" id="p-check-in" class="form-control" value="${checkIn}" placeholder="YYYY-MM-DD HH:MM:SS" required style="width: 100%; box-sizing: border-box; height: 40px; padding: 5px 10px;">
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 5px;">เวลาออกงาน (check_out_time)</label>
+                    <input type="text" id="p-check-out" class="form-control" value="${checkOut}" placeholder="YYYY-MM-DD HH:MM:SS (เว้นว่างได้)" style="width: 100%; box-sizing: border-box; height: 40px; padding: 5px 10px;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 5px;">สถานะ (status)</label>
+                    <select id="p-status" class="form-control" style="width: 100%; box-sizing: border-box; height: 40px; padding: 5px 10px;">
+                        <option value="on_time" ${status === 'on_time' ? 'selected' : ''}>ตรงเวลา (on_time)</option>
+                        <option value="late" ${status === 'late' ? 'selected' : ''}>สาย (late)</option>
+                        <option value="early" ${status === 'early' ? 'selected' : ''}>ก่อนเวลา (early)</option>
+                        <option value="absent" ${status === 'absent' ? 'selected' : ''}>ขาดงาน (absent)</option>
+                    </select>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-secondary" onclick="document.getElementById('edit-timelog-popup-overlay').remove()" style="width: auto; padding: 8px 15px; height: auto;">ยกเลิก</button>
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 8px 20px; background: #f16e00; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 4px; height: auto;">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // ตั้งค่า Event ตอนกดยืนยันเซฟข้อมูล
+    document.getElementById('popup-edit-timelog-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const payload = {
+            log_id: id,
+            work_date: document.getElementById('p-work-date').value,
+            check_in_time: document.getElementById('p-check-in').value,
+            check_out_time: document.getElementById('p-check-out').value || null,
+            status: document.getElementById('p-status').value
+        };
+        
+        fetch('api/timelog.php?action=update_log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('🎉 ' + data.message, 'success');
+                overlay.remove();
+                loadTimeLogsSection(); // รีโหลดอัปเดตตารางประวัติเวลาบนหน้าจอทันที
+            } else {
+                showToast('❌ ' + data.message, 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+        });
+    });
+};
